@@ -146,7 +146,7 @@ elif weapon_selection == '2':
      Player.weapon_list.append(b)
 
 
-player = Player(input_name, 1, 1, 5)
+player = Player(input_name, 10, 10, 5)
 player.switch_weapon(1)
     #Game start
 def encounter():
@@ -156,14 +156,24 @@ def fight():
     action = input('-->')
     if action == 'attack' or action == 'a':
         player.attack(player.current_enemy[0])
+    if action == 'swap' or action == 's':
+        weapon_swap = input('which weapon would you like to swap to?\n{weapons}\n1, 2, 3\n-->'.format(weapons = player.weapon_list))
+        while int(weapon_swap) > len(player.weapon_list) or int(weapon_swap) < 1:
+            weapon_swap = input('You can\'t trick the Dream\n-->')
+        if weapon_swap == '1' or weapon_swap == player.weapon_list[0].name:
+            player.switch_weapon(0)
+            print('You swapped to {name}.'.format(name = player.current_weapon.name))
+        if weapon_swap == '2' or weapon_swap == player.weapon_list[1].name:
+            player.switch_weapon(1)
+            print('You swapped to {name}.'.format(name = player.current_weapon.name))
 
 def gameover():
-    if player.is_dead = True:
+    if player.is_dead == True:
         player.score = 0
         player.health = player.max_health
         player.current_enemy_list = []
         weapon_list = []
-        
+
 main()
 encounter()
 #player.current_enemy[0].enemy_attack()
