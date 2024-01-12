@@ -50,10 +50,11 @@ class Player:
     def victory(self):
         print('you\'ve survived the encounter')
         self.score += 1
-        self.current_enemy.pop()
 
     def encounter(self):
         self.current_enemy_list.append(enemy_list[random.randint(0, 1)])
+        self.current_enemy_list[0].is_dead = False
+        self.current_enemy_list[0].health = self.current_enemy_list[0].max_health
         print('A {name} has appeared.'.format(name = self.current_enemy[0].name))
         print('What do you choose to do?')
         fight()
@@ -61,21 +62,19 @@ class Player:
 
 
 class Enemy:
-    def __init__(self, name, health, max_health, strength, identity):
+    def __init__(self, name, health, maximum, strength, identity):
         self.name = name
         self.health = health
-        self.max_health = max_health
+        self.max_health = maximum
         self.strength = strength
         self.id = identity
         self.is_dead = False
-        self.is_current_enemy = False
 
     def enemy_death(self):
         if self.health <= 0:
             self.health = 0
             self.is_dead = True
             print('{name} has fallen into a slumber'.format(name = self.name))
-            self.is_current_enemy = False
             player.victory()
 
     def enemy_lose_health(self, amount):
@@ -105,13 +104,14 @@ class Weapon:
         return description
 
     def harm(self, enemy):
-        if self.name == a.name:
+        if self.name == b.name:
             player.health -= 1
             print('You cut yourself on the sharp edge for 1hp.')
             if player.health <= 0:
                 player.death()
-            
-            
+        if self.name == c.name:
+            print('The Iron Maiden was cast, and you have lost it')
+            player.weapon_list.remove(c)
         if self.crit > random.randint(0, 10):
             print('Critial!')
             enemy.enemy_lose_health(self.power * 2)
@@ -130,6 +130,7 @@ enemy_list = [wretched_eye, malformed_despair]
 #Weapons -
 a = Weapon('A rusty knife', 3, 1, 2)
 b = Weapon('A shard of glass', 2, 1, 7)
+c = Weapon('Iron Maiden', 10, 1, 1)
 p = Weapon('Fist', 1, 1, 1)
 #Character Creator + Intro -
 def main():
@@ -152,6 +153,7 @@ player.switch_weapon(1)
     #Game start
 def encounter():
     player.encounter()
+
 def fight():
     print('{name}({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp).'.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[0].name, enemy_hp = player.current_enemy_list[0].health, enemy_max_hp = player.current_enemy_list[0].max_health))
     action = input('-->')
@@ -163,26 +165,33 @@ def fight():
             weapon_swap = input('You can\'t trick the Dream\n-->')
         if player.weapon_list[int(weapon_swap) - 1] == player.current_weapon:
             input('You\'re already holding that weapon.\n-->') 
-        if weapon_swap == '1':
-            player.switch_weapon(0)
-        if weapon_swap == '2':
-            player.switch_weapon(1)
+        if int(weapon_swap) <= len(player.weapon_list) or int(weapon_swap) > 0:
+            player.switch_weapon(int(weapon_swap) - 1)
     if action == 'equip' or action == 'e':
         print('you\'re holding' + player.current_weapon.name)
     if player.current_enemy[0].is_dead == True:
+        player.current_enemy.pop()
         loot_drop()
     else:
         fight()
 def loot_drop():
+    global possible_items
     possible_items = []
-    random_number1 = random.randint(0, 5)
+    random_number1 = 1
     random_number2 = random.randint(0, 5)
     random_number3 = random.randint(0, 5)
     if random_number1 == 1:
-        possible_items.append[b]
-    selection = input('out of the void appears a glimmer\n{loot}\n-->'.format(loot = possible_items))
+        possible_items.append(c)
+    loot_pickup()
+    encounter()
 
-
+def loot_pickup():
+    selection = input('out of the void appears a glimmer\n{loot}\nChoose wisely...\n-->'.format(loot = possible_items))
+    while int(selection) <= 0 or int(selection) > len(possible_items):
+        selection = input('Choose one.')
+    if int(selection) <= len(possible_items) > 0:
+        player.weapon_list.append(possible_items[int(selection) - 1])
+        print('You picked up {name}.'.format(name = player.weapon_list[-1].name))
 
 def gameover():
     if player.is_dead == True:
