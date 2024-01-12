@@ -6,7 +6,7 @@ game_over = False
 
 class Player:
     weapon_list = []
-    current_enemy = []
+    current_enemy_list = []
     score = 0
     def __init__(self, name, health, max_health, strength):
         self.name = name
@@ -15,7 +15,7 @@ class Player:
         self.strength = strength
         self.current_weapon = self.weapon_list[0]
         self.is_dead = False
-        self.current_enemy = self.current_enemy
+        self.current_enemy = self.current_enemy_list
 
     def __repr__(self):
         description = '{name}, {hp}/{max_hp}HP, {strength} Str, currently using {current}, out of {list}'.format(name = self.name, hp = self.health, max_hp = self.max_health, strength = self.strength, current = self.current_weapon, list = self.weapon_list)
@@ -52,7 +52,7 @@ class Player:
         self.encounter()
 
     def encounter(self):
-        self.current_enemy.append(enemy_list[random.randint(0, 1)])
+        self.current_enemy_list.append(enemy_list[random.randint(0, 1)])
         print('A {name} has appeared.'.format(name = self.current_enemy[0].name))
         print('What do you choose to do?')
         fight()
@@ -107,6 +107,9 @@ class Weapon:
         if self.name == a.name:
             player.health -= 1
             print('You cut yourself on the sharp edge for 1hp.')
+            if player.health <= 0:
+                player.death()
+            
             
         if self.crit > random.randint(0, 10):
             print('Critial!')
@@ -132,22 +135,37 @@ def main():
     global player
 Player.weapon_list.append(p)
 print('Yes of course... your name is {name}.\nThere\'s a rusty knife and a shard of glass in front of you'.format(name = input_name))
-weapon_selection = input('Pick. one. up. press 1 or 2\n-->')
 
+weapon_selection = input('Pick. one. up. press 1 or 2\n-->')
+while weapon_selection < '1' or weapon_selection > '2':
+    weapon_selection = input('You have to pick either one\n-->')
+    
 if weapon_selection == '1':
     Player.weapon_list.append(a)
 elif weapon_selection == '2':
      Player.weapon_list.append(b)
 
+
 player = Player(input_name, 1, 1, 5)
 player.switch_weapon(1)
     #Game start
+def encounter():
+    player.encounter()
 def fight():
-    print('{name}({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp).'.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.enemy_list[0].name, enemy_hp = player.enemy_list[0].health, enemy_max_hp = player.enemy_list[0].max_health))
-    
-main()
-game()
+    print('{name}({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp).'.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[0].name, enemy_hp = player.current_enemy_list[0].health, enemy_max_hp = player.current_enemy_list[0].max_health))
+    action = input('-->')
+    if action == 'attack' or action == 'a':
+        player.attack(player.current_enemy[0])
 
+def gameover():
+    if player.is_dead = True:
+        player.score = 0
+        player.health = player.max_health
+        player.current_enemy_list = []
+        weapon_list = []
+        
+main()
+encounter()
 #player.current_enemy[0].enemy_attack()
 #player.switch_weapon(1)
 #player.attack(player.current_enemy[0])
@@ -158,17 +176,3 @@ game()
 #player.attack(player.current_enemy[0])
 #player.current_enemy[0].enemy_attack()
 
-   encounter = player.encounter()
-    while player.current_enemy[0].is_dead == False:
-        command = input('-->')
-        if command == 'attack' or command == 'a':
-            player.attack(player.current_enemy[0])
-        if command == 'help':
-            print('type \'attack\' or \'a\' to attack, \'switch\' or \'s\' to switch weapons')
-        if command == 'switch' or command == 's':
-            print('what weapon would you like to equip?\n{weapons}'.format(weapons = player.weapon_list))
-            change = input('-->')
-            if change == '1':
-                player.switch_weapon(0)
-            elif change == '2':
-                player.switch_weapon(1)
