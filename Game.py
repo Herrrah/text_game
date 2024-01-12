@@ -7,13 +7,14 @@ game_over = False
 class Player:
     weapon_list = []
     current_enemy_list = []
+    num = 0
     score = 0
     def __init__(self, name, health, max_health, strength):
         self.name = name
         self.health = health
         self.max_health = max_health
         self.strength = strength
-        self.current_weapon = self.weapon_list[0]
+        self.current_weapon = self.weapon_list[self.num]
         self.is_dead = False
         self.current_enemy = self.current_enemy_list
 
@@ -39,8 +40,9 @@ class Player:
     
     def switch_weapon(self, num):
         if num <= len(self.weapon_list) and num >= 0:
-            self.current_weapon = self.weapon_list[num]
-            print('You equipped {name}'.format(name = self.weapon_list[num].name))
+            self.num = num
+            self.current_weapon = self.weapon_list[self.num]
+            print('You equipped {name}'.format(name = self.current_weapon.name))
     
     def attack(self, enemy):
         self.current_weapon.harm(enemy)
@@ -49,7 +51,6 @@ class Player:
         print('you\'ve survived the encounter')
         self.score += 1
         self.current_enemy.pop()
-        self.encounter()
 
     def encounter(self):
         self.current_enemy_list.append(enemy_list[random.randint(0, 1)])
@@ -127,8 +128,8 @@ wretched_eye = Enemy('Wretched eye', 4, 4, 3, 1)
 malformed_despair = Enemy('Malformed head', 4, 4, 5, 2)
 enemy_list = [wretched_eye, malformed_despair]
 #Weapons -
-a = Weapon('A shard of glass', 2, 1, 7)
-b = Weapon('A rusty knife', 3, 1, 2)
+a = Weapon('A rusty knife', 3, 1, 2)
+b = Weapon('A shard of glass', 2, 1, 7)
 p = Weapon('Fist', 1, 1, 1)
 #Character Creator + Intro -
 def main():
@@ -157,15 +158,31 @@ def fight():
     if action == 'attack' or action == 'a':
         player.attack(player.current_enemy[0])
     if action == 'swap' or action == 's':
-        weapon_swap = input('which weapon would you like to swap to?\n{weapons}\n1, 2, 3\n-->'.format(weapons = player.weapon_list))
+        weapon_swap = input('which weapon would you like to swap to?\n{weapons}\n{numbers}\n-->'.format(weapons = player.weapon_list, numbers = range(1, len(player.weapon_list), 1)))
         while int(weapon_swap) > len(player.weapon_list) or int(weapon_swap) < 1:
             weapon_swap = input('You can\'t trick the Dream\n-->')
-        if weapon_swap == '1' or weapon_swap == player.weapon_list[0].name:
+        if player.weapon_list[int(weapon_swap) - 1] == player.current_weapon:
+            input('You\'re already holding that weapon.\n-->') 
+        if weapon_swap == '1':
             player.switch_weapon(0)
-            print('You swapped to {name}.'.format(name = player.current_weapon.name))
-        if weapon_swap == '2' or weapon_swap == player.weapon_list[1].name:
+        if weapon_swap == '2':
             player.switch_weapon(1)
-            print('You swapped to {name}.'.format(name = player.current_weapon.name))
+    if action == 'equip' or action == 'e':
+        print('you\'re holding' + player.current_weapon.name)
+    if player.current_enemy[0].is_dead == True:
+        loot_drop()
+    else:
+        fight()
+def loot_drop():
+    possible_items = []
+    random_number1 = random.randint(0, 5)
+    random_number2 = random.randint(0, 5)
+    random_number3 = random.randint(0, 5)
+    if random_number1 == 1:
+        possible_items.append[b]
+    selection = input('out of the void appears a glimmer\n{loot}\n-->'.format(loot = possible_items))
+
+
 
 def gameover():
     if player.is_dead == True:
