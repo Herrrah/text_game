@@ -307,8 +307,12 @@ def loot_pickup():
     if int(selection) <= len(possible_items) > 0:
         if possible_items[int(selection) - 1] in player.weapon_list:
             print('\nYour {name} grew stronger.'.format(name = possible_items[int(selection) - 1].name))
-            possible_items[int(selection) - 1].power += 1
-            possible_items[int(selection) - 1].speed += 1
+            if possible_items[int(selection) -1] == c:
+                possible_items[int(selection) - 1].power += 3
+                possible_items[int(selection) - 1].speed += 3
+            else: 
+                possible_items[int(selection) - 1].power += 1
+                possible_items[int(selection) - 1].speed += 1
         else:
             player.weapon_list.append(possible_items[int(selection) - 1])
             print('\nYou picked up {name}.'.format(name = player.weapon_list[-1].name))
