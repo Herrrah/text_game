@@ -1,13 +1,14 @@
 import random
 import math
 
-game_over = False
+############################################################### PLAYER
 
 class Player:
     weapon_list = []
     current_enemy_list = []
     num = 0
     score = 0
+    encounter_scaling = 0
     def __init__(self, name, health, max_health, strength):
         self.name = name
         self.health = health
@@ -27,7 +28,6 @@ class Player:
             self.is_dead = True
             print('You perished in your dreams')
             print('You slayed {score} fiends.'.format(score = self.score))
-            game_over = True
             gameover()
     
     def lose_health(self, amount):
@@ -65,17 +65,24 @@ class Player:
         input('...')
 
     def encounter(self):
+        self.encounter_scaling += 1
         self.current_enemy_list.append(enemy_list[random.randint(0, 1)])
         self.current_enemy_list[0].is_dead = False
         self.current_enemy_list[0].health = self.current_enemy_list[0].max_health
         self.current_enemy_list[0].ise_poisoned = False
+        self.current_enemy[0].health += 1
+        self.current_enemy[0].max_health += 1
+        self.current_enemy[0].strength += 1
         print('\nA {name} has appeared.'.format(name = self.current_enemy[0].name))
         print('What do you choose to do?')
         fight()
     
 
+################################################################## ENEMIES
 
 class Enemy:
+    strength_buff_counter = 0
+
     def __init__(self, name, health, maximum, strength, identity):
         self.name = name
         self.health = health
@@ -84,30 +91,12 @@ class Enemy:
         self.is_dead = False
         self.is_poisoned = False
 
-    def enemy_death(self):
-        if self.health <= 0:
-            self.health = 0
-            self.is_dead = True
-            self.strength = self.strength
-            print('{name} has fallen into a slumber'.format(name = self.name))
-            
-
-    def enemy_lose_health(self, amount):
-        self.health -= amount
-        if self.health <= 0:
-            print('You struck the creature for {amount}dmg.'.format(amount = amount))
-            input('...')
-            self.enemy_death()
-        else:
-            print('{name} has been injured for {amount}dmg.'.format(name = self.name, amount = amount))
-            input('...')
-        
-
     def enemy_attack(self):
         player.lose_health(self.strength)
     
     def enemy_special(self):
         if player.current_enemy[0] == enemy_list[1]:
+            self.strength_buff_counter += 1
             self.strength += 1
             print('\n{name} is getting angrier.'.format(name = self.name))
         elif player.current_enemy[0] == enemy_list[0]:
@@ -122,7 +111,26 @@ class Enemy:
             self.enemy_death()
         else:
             print('You poisoned {name} for {amount}dmg.'.format(name = self.name, amount = amount))
+            
+    def enemy_death(self):
+        if self.health <= 0:
+            self.health = 0
+            self.is_dead = True
+            self.strength -= self.strength_buff_counter
+            print('{name} has fallen into a slumber'.format(name = self.name))
+            
+
+    def enemy_lose_health(self, amount):
+        self.health -= amount
+        if self.health <= 0:
+            print('You struck the creature for {amount}dmg.'.format(amount = amount))
+            input('...')
+            self.enemy_death()
+        else:
+            print('{name} has been injured for {amount}dmg.'.format(name = self.name, amount = amount))
+            input('...')
         
+################################################################### WEAPONS
 
 class Weapon:
     def __init__(self, name, power, speed, crit, poison = False):
@@ -156,20 +164,16 @@ class Weapon:
             enemy.enemy_lose_health(self.power * 2)
         if self.crit < random_number_crit: 
             enemy.enemy_lose_health(self.power)
-    
- #Input -
-def start():   
-    print('You\'re stuck in an infinite maze, you can\'t remember for how long, but you can feel that you\'ve been here before...\n')
-    input('\nPress any button to continue')
 
+###################################################################### GAME    
 
 #Enemies -
-wretched_eye = Enemy('Wretched eye', 8, 8, 3, 1)
-malformed_despair = Enemy('Malformed despair', 6, 6, 5, 2)
+wretched_eye = Enemy('Wretched eye', 7, 7, 2, 1)
+malformed_despair = Enemy('Malformed despair', 5, 5, 4, 2)
 enemy_list = [wretched_eye, malformed_despair]
 #Weapons -
 a = Weapon('Rusty Knife', 3, 1, 1)
-b = Weapon('Shard of Glass', 2, 1, 7)
+b = Weapon('Shard of Glass', 2, 1, 8)
 c = Weapon('Iron Maiden', 10, 1, 1)
 d = Weapon('Flaming Sword', 4, 1, 2)
 e = Weapon('Putrid Crowbar', 2, 1, 0, True)
@@ -177,11 +181,15 @@ p = Weapon('Fist', 1, 1, 1)
 weapons_list = [a, b, c, d, e]
 
 
+ #Input -
+def start():   
+    print('You\'re stuck in an infinite maze, you can\'t remember for how long, but you can feel that you\'ve been here before...\n')
+    input('\nPress any button to continue')
+
 #Character Creator + Intro -
 def main():
     global player
-    Player.weapon_list.append(p)
-    global input_name
+#    Player.weapon_list.append(p)
     input_name = input('\nWhat was your name again...\n-->')
     print('\nYes of course... your name is {name}.\nThere\'s |A Rusty Knife| and |A Shard of Glass| in front of you'.format(name = input_name))
     
@@ -197,8 +205,8 @@ def main():
 
 
     player = Player(input_name, 10, 10, 5)
-    player.switch_weapon(1)
-    Player.weapon_list.pop(0)
+#    player.switch_weapon(1)
+#    Player.weapon_list.pop(0)
     #Game start
 def encounter():
     player.encounter()
@@ -323,7 +331,9 @@ def gameover():
         option = input('\n-->')
     if int(option) == 1:
         player.score = 0
-        player.health = player.max_health
+        player.current_enemy_list[0].health -= player.encounter_scaling
+        player.current_enemy_list[0].max_health -= player.encounter_scaling
+        player.current_enemy_list[0].strength -= player.encounter_scaling
         player.current_enemy_list = []
         weapon_list = []
         player.is_dead = False
@@ -331,6 +341,7 @@ def gameover():
         start()
         main()
         encounter()
+
         
 start()
 main()
