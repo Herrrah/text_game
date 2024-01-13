@@ -117,6 +117,7 @@ class Enemy:
             self.health = 0
             self.is_dead = True
             self.strength -= self.strength_buff_counter
+            self.strength_buff_counter = 0
             print('{name} has fallen into a slumber'.format(name = self.name))
             
 
@@ -146,6 +147,7 @@ class Weapon:
 
     def harm(self, enemy):
         random_number_crit = random.randint(1, 10)
+        double_hit_chance = random.randint(0, 2)
         if self.name == b.name:
             player.health -= 1
             print('You cut yourself on the sharp edge for 1hp.')
@@ -159,6 +161,10 @@ class Weapon:
         if self.poison == True:
                 enemy.is_poisoned = True
 #                print('You poisoned {name} for {dmg}dmg.'.format(name = enemy.name, dmg = math.ceil(self.power / 2)))
+        if self.speed >= 2:
+            if double_hit_chance == 2:
+                print('Your swiftness enabled you to strike twice')
+                enemy.enemy_lose_health(self.power)
         if self.crit >= random_number_crit:
             print('Critial!')
             enemy.enemy_lose_health(self.power * 2)
@@ -172,10 +178,10 @@ wretched_eye = Enemy('Wretched eye', 7, 7, 2, 1)
 malformed_despair = Enemy('Malformed despair', 5, 5, 4, 2)
 enemy_list = [wretched_eye, malformed_despair]
 #Weapons -
-a = Weapon('Rusty Knife', 3, 1, 1)
+a = Weapon('Rusty Knife', 2, 2, 1)
 b = Weapon('Shard of Glass', 2, 1, 8)
 c = Weapon('Iron Maiden', 10, 1, 1)
-d = Weapon('Flaming Sword', 4, 1, 2)
+d = Weapon('Flaming Sword', 3, 1, 2)
 e = Weapon('Putrid Crowbar', 2, 1, 0, True)
 p = Weapon('Fist', 1, 1, 1)
 weapons_list = [a, b, c, d, e]
@@ -239,7 +245,7 @@ def fight():
     if action == 'equip' or action == 'e':
         print('\nYou\'re holding | {name} | {power} Power | {speed} Speed | {crit} Crit'.format(name = player.current_weapon.name, power = player.current_weapon.power, speed = player.current_weapon.speed, crit = player.current_weapon.crit))
         if player.current_weapon == a:
-            print('\nA rusty knife you picked up, there is nothing special about it')
+            print('\nA rusty knife you picked up, it feels light')
             input('...')
             fight()
         if player.current_weapon == b:
@@ -334,6 +340,7 @@ def gameover():
         player.current_enemy_list[0].health -= player.encounter_scaling
         player.current_enemy_list[0].max_health -= player.encounter_scaling
         player.current_enemy_list[0].strength -= player.encounter_scaling
+        player.current_enemy_list[0].is_poisoned = False
         player.current_enemy_list = []
         weapon_list = []
         player.is_dead = False
