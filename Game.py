@@ -6,6 +6,7 @@ import os
 
 class Player:
     weapon_list = []
+    buff_list = []
     current_enemy_list = []
     num = 0
     score = 0
@@ -108,13 +109,18 @@ class Enemy:
             print('\n{name} wails.'.format(name = self.name))
         elif player.current_enemy[0] == enemy_list[0]:
             self.health += 2
-            print('\n{name} stared into your soul and felt satiated,\n+{hp}HP'.format(name = self.name, hp = 2))
-        elif player.current_enemy[0] == enemy_list[0]:
-            if self.speed >= 9:
-                print('{name} tries to gain more speed but can\'t')
+            if self.health > self.max_health:
+                self.health = self.max_health
+                enemy_attack()
             else:
-                self.strength_buff_counter += 1
+                print('\n{name} stared into your soul and felt satiated,\n+{hp}HP'.format(name = self.name, hp = 2))
+        elif player.current_enemy[0] == enemy_list[2]:
+            if self.speed >= 9:
+                print('{name} tries to gain more speed but can\'t'.format(name = self.name))
+            else:
+                self.speed_buff_counter += 1
                 self.speed+=1
+        input('...')
             
 
     
@@ -134,24 +140,23 @@ class Enemy:
             self.is_dead = True
             self.strength -= self.strength_buff_counter
             self.strength_buff_counter = 0
+            self.speed -= self.speed_buff_counter
+            self.speed_buff_counter = 0
             print('{name} has fallen into a slumber'.format(name = self.name))
-            input('...')
             
 
     def enemy_lose_health(self, amount):
-        dodge_chance = random.randint(0, 10)
+        dodge_chance = random.randint(1, 10)
         if self.speed >= dodge_chance:
-            print('{name} evaded your attack.')
-            input('...')
+            print('{name} evaded your attack.'.format(name = self.name))
         else:
             self.health -= amount
             if self.health <= 0:
                 print('You struck the creature for {amount}dmg.'.format(amount = amount))
-                input('...')
                 self.enemy_death()
             else:
                 print('{name} has been injured for {amount}dmg.'.format(name = self.name, amount = amount))
-                input('...')
+        input('...')
         
 ################################################################### WEAPONS
 
@@ -170,42 +175,54 @@ class Weapon:
     def harm(self, enemy):
         random_number_crit = random.randint(1, 10)
         random_number_crit2 = random.randint(1, 10)
-        double_hit_chance = random.randint(0, 2)
+        double_hit_chance = random.randint(0, 3)
+        random_bleed_amount = random.randint(1, 2)
         if self.name == b.name:
-            player.health -= 1
-            print('You cut yourself on the sharp edge for 1hp.')
+            player.health -= random_bleed_amount
+            print('You cut yourself on the sharp edge for {amount}.'.format(amount = random_bleed_amount))
             if player.health <= 0:
                 player.death()
                 gameover()
         elif self.name == c.name:
             print('The Iron Maiden was cast, and you have lost it')
-            enemy.enemy_lose_health(self.power)
+            enemy.enemy_lose_health(self.power + player.strength)
             player.weapon_list.remove(c)
             player.current_weapon = player.weapon_list[-1]
-        elif self.poison == True:
-                enemy.is_poisoned = True
+
         elif self.speed >= 2:
-            if double_hit_chance == 2:
-                print('Your swiftness enabled you to strike twice')
-                enemy.enemy_lose_health(self.power)
-                
+            if double_hit_chance >= 1:
+                print('Your swiftness enabled you to strike {amount} more time(s)!'.format(amount = double_hit_chance))
+                for i in range(1, (double_hit_chance + 1)):
+                    enemy.enemy_lose_health((self.power + player.strength - 1))
+
+
+        if self.poison == True:
+            enemy.is_poisoned = True
+                    
         if self.crit >= random_number_crit:
             if enemy.is_dead == False:
-                print('Critial!')
-                enemy.enemy_lose_health(self.power * 2)
+                if self.name == b.name:
+                    print('EXTRA Critical!')
+                    enemy.enemy_lose_health(self.power * 2 + player.strength + 2)
+                else:
+                    print('Critial!')
+                    enemy.enemy_lose_health(self.power * 2 + player.strength)
         elif self.crit <= random_number_crit:
             if enemy.is_dead == False:
-                enemy.enemy_lose_health(self.power) 
+                enemy.enemy_lose_health(self.power + player.strength) 
             
-
+###################################################################### Buffs
+class Buff:
+    def __init__(self, name):
+        self.name = name
 ###################################################################### GAME    
 
 #Enemies -
 
 wretched_eye = Enemy('Wretched Eye', 7, 7, 2, 1)
 malformed_despair = Enemy('Malformed Despair', 5, 5, 4, 0)
-rift_walker = Enemy('Rift Walker', 3, 3, 3, 5)
-enemy_list = [wretched_eye, malformed_despair]
+rift_walker = Enemy('Rift Walker', 3, 3, 2, 5)
+enemy_list = [wretched_eye, malformed_despair, rift_walker]
 
 ####################################################################### Weapons
 
@@ -216,6 +233,11 @@ d = Weapon('Flaming Sword', 3, 1, 2)
 e = Weapon('Putrid Crowbar', 2, 1, 0, True)
 
 weapons_list = [a, b, c, d, e]
+###################################################################### buffs
+
+health = Buff('Frigid Hearth')
+rage = Buff('Unbridled emotinon')
+buffs_list = [health, rage]
 
 
  #Input -
@@ -246,7 +268,7 @@ def main():
         Player.weapon_list.append(a)
     elif weapon_selection == '2':
          Player.weapon_list.append(b)
-    player = Player(input_name, 10, 10, 5)
+    player = Player(input_name, 10, 10, 0)
     print('You picked up {name}, how foolish.'.format(name = player.weapon_list[0].name))
     input('...')
     #Game start
@@ -256,8 +278,9 @@ def encounter():
 def fight():
     os.system('cls')
     if player.current_enemy[0].is_dead == False:
-        print('\n | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[0].name, enemy_hp = player.current_enemy_list[0].health, enemy_max_hp = player.current_enemy_list[0].max_health))
-        print('\n | a:attack | s:swap weapon | e:check equipped weapon | i:enemy info | ')
+        print('                          | {score} fiends slain | '.format(score = player.score))
+        print('\n       | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[0].name, enemy_hp = player.current_enemy_list[0].health, enemy_max_hp = player.current_enemy_list[0].max_health))
+        print('\n| a:attack | s:swap weapon | e:check equipped weapon | i:enemy info | ')
     action = input('-->')
     if action == action.isdigit() == True:
         print('\nNot a valid command')
@@ -282,7 +305,7 @@ def fight():
             input('...')
             fight()
     if action == 'equip' or action == 'e':
-        print('\nYou\'re holding | {name} | {power} Power | {speed} Speed | {crit} Crit'.format(name = player.current_weapon.name, power = player.current_weapon.power, speed = player.current_weapon.speed, crit = player.current_weapon.crit))
+        print('\nYou\'re holding | {name} | {power} Power | {speed} Speed | {crit} Crit'.format(name = player.current_weapon.name, power = player.current_weapon.power + player.strength, speed = player.current_weapon.speed, crit = player.current_weapon.crit))
         if player.current_weapon == a:
             print('\nA rusty knife you picked up, it feels light')
         if player.current_weapon == b:
@@ -311,7 +334,7 @@ def fight():
     else:
         if player.current_enemy[0].is_dead == False:
             if player.current_enemy[0].is_poisoned == True:
-                player.current_enemy[0].poison_lose_health(int(e.power / 2))
+                player.current_enemy[0].poison_lose_health(int(e.power))
             if player.current_enemy[0].is_dead == False:
                 enemy_action = random.randint(0,5)
                 if enemy_action <= 2:
@@ -332,40 +355,60 @@ def fight():
             player.current_enemy[0].is_poisoned = False
             player.victory()
             loot_drop()
-            loot_pickup()
             encounter()
 
 def loot_drop():
-    global possible_items
-    possible_items = []
-    random_number1 = 0
-    random_number2 = 0
-    while random_number1 == random_number2:
-        random_number1 = random.randint(0, len(weapons_list))
-        random_number2 = random.randint(0, len(weapons_list))
-    possible_items.append(weapons_list[random_number1 - 1])
-    possible_items.append(weapons_list[random_number2 - 1])
-
+    if player.score % 4 == 0:
+        buff_pickup()
+    else:
+        global possible_loot
+        possible_loot = []
+        random_number1 = 0
+        random_number2 = 0
+        while random_number1 == random_number2:
+            random_number1 = random.randint(0, len(weapons_list))
+            random_number2 = random.randint(0, len(weapons_list))
+        possible_loot.append(weapons_list[random_number1 - 1])
+        possible_loot.append(weapons_list[random_number2 - 1])
+        loot_pickup()
 
 def loot_pickup():
     os.system('cls')
-    selection = input('\nOut of the void appears a Glimmer\n{loot1} | {loot2}\nChoose wisely...\n-->'.format(loot1 = possible_items[0], loot2 = possible_items[1]))
-    while selection.isdigit() == False or int(selection) <= 0 or int(selection) > len(possible_items):
+    selection = input('Out of the void appears a Glimmer\n\n | {loot1} | {loot2} | \n\nChoose wisely...\n-->'.format(loot1 = possible_loot[0], loot2 = possible_loot[1]))
+    while selection.isdigit() == False or int(selection) <= 0 or int(selection) > len(possible_loot):
         selection = input('\nChoose one.\n-->')
-    if int(selection) <= len(possible_items) > 0:
-        if possible_items[int(selection) - 1] in player.weapon_list:
-            print('\nYour {name} grew stronger.'.format(name = possible_items[int(selection) - 1].name))
-            os.system('cls')
-            if possible_items[int(selection) -1] == c:
-                possible_items[int(selection) - 1].power += 3
-                possible_items[int(selection) - 1].speed += 3
+    if int(selection) <= len(possible_loot) and int(selection) > 0:
+        if possible_loot[int(selection) - 1] in player.weapon_list:
+            print('\nYour {name} grew stronger.'.format(name = possible_loot[int(selection) - 1].name))
+            input('...')
+            if possible_loot[int(selection) -1] == c:
+                possible_loot[int(selection) - 1].power += 3
+
             else: 
-                possible_items[int(selection) - 1].power += 1
-                possible_items[int(selection) - 1].speed += 1
+                possible_loot[int(selection) - 1].power += 1
+
         else:
-            player.weapon_list.append(possible_items[int(selection) - 1])
+            player.weapon_list.append(possible_loot[int(selection) - 1])
             print('\nYou picked up {name}.'.format(name = player.weapon_list[-1].name))
             input('...')
+
+def buff_pickup():
+    os.system('cls')
+    selection = input('Well done for surviving this long.\nAn exceedingly bright shine emanates.\n\n | {buff1} | {buff2} |\n\nPick at your heart\'s content\n-->'.format(buff1 = buffs_list[0].name, buff2 = buffs_list[1].name))
+    while selection.isdigit() == False or int(selection) <= 0 or int(selection) > len(buffs_list):
+        selection = input('\nChoose one.\n-->')
+    if selection == '1':
+        player.buff_list.append(buffs_list[0])
+        print('A wash of tranquility washes over you\n+5 Max HP\nFully healed')
+        player.max_health += 6
+        player.health = player.max_health
+    elif selection == '2':
+        player.buff_list.append(buffs_list[1])
+        print('Your heart drums with intensity.\n+2 Strength to all weapons\nFully healed')
+        player.strength += 2
+        player.health = player.max_health
+    input('...')
+
 
 def gameover():
     os.system('cls')
