@@ -71,7 +71,7 @@ class Player:
 
     def encounter(self):
         self.encounter_scaling += 1
-        self.current_enemy_list.append(enemy_list[random.randint(0, 1)])
+        self.current_enemy_list.append(enemy_list[random.randint(1, len(enemy_list)) - 1])
         self.current_enemy_list[0].is_dead = False
         self.current_enemy_list[0].health = self.current_enemy_list[0].max_health
         self.current_enemy_list[0].ise_poisoned = False
@@ -88,12 +88,13 @@ class Player:
 
 class Enemy:
     strength_buff_counter = 0
-
-    def __init__(self, name, health, maximum, strength, identity):
+    speed_buff_counter = 0
+    def __init__(self, name, health, maximum, strength, speed):
         self.name = name
         self.health = health
         self.max_health = maximum 
-        self.strength = strength 
+        self.strength = strength
+        self.speed = speed 
         self.is_dead = False
         self.is_poisoned = False
 
@@ -105,11 +106,16 @@ class Enemy:
             self.strength_buff_counter += 1
             self.strength += 1
             print('\n{name} wails.'.format(name = self.name))
-            input('...')
         elif player.current_enemy[0] == enemy_list[0]:
             self.health += 2
             print('\n{name} stared into your soul and felt satiated,\n+{hp}HP'.format(name = self.name, hp = 2))
-            input('...')
+        elif player.current_enemy[0] == enemy_list[0]:
+            if self.speed >= 9:
+                print('{name} tries to gain more speed but can\'t')
+            else:
+                self.strength_buff_counter += 1
+                self.speed+=1
+            
 
     
     def poison_lose_health(self, amount):
@@ -133,14 +139,19 @@ class Enemy:
             
 
     def enemy_lose_health(self, amount):
-        self.health -= amount
-        if self.health <= 0:
-            print('You struck the creature for {amount}dmg.'.format(amount = amount))
+        dodge_chance = random.randint(0, 10)
+        if self.speed >= dodge_chance:
+            print('{name} evaded your attack.')
             input('...')
-            self.enemy_death()
         else:
-            print('{name} has been injured for {amount}dmg.'.format(name = self.name, amount = amount))
-            input('...')
+            self.health -= amount
+            if self.health <= 0:
+                print('You struck the creature for {amount}dmg.'.format(amount = amount))
+                input('...')
+                self.enemy_death()
+            else:
+                print('{name} has been injured for {amount}dmg.'.format(name = self.name, amount = amount))
+                input('...')
         
 ################################################################### WEAPONS
 
@@ -173,7 +184,6 @@ class Weapon:
             player.current_weapon = player.weapon_list[-1]
         elif self.poison == True:
                 enemy.is_poisoned = True
-                enemy.enemy_lose_health(self.power)
         elif self.speed >= 2:
             if double_hit_chance == 2:
                 print('Your swiftness enabled you to strike twice')
@@ -192,8 +202,9 @@ class Weapon:
 
 #Enemies -
 
-wretched_eye = Enemy('Wretched eye', 7, 7, 2, 1)
-malformed_despair = Enemy('Malformed despair', 5, 5, 4, 2)
+wretched_eye = Enemy('Wretched Eye', 7, 7, 2, 1)
+malformed_despair = Enemy('Malformed Despair', 5, 5, 4, 0)
+rift_walker = Enemy('Rift Walker', 3, 3, 3, 5)
 enemy_list = [wretched_eye, malformed_despair]
 
 ####################################################################### Weapons
@@ -209,8 +220,13 @@ weapons_list = [a, b, c, d, e]
 
  #Input -
 def start():
-    os.system('cls')   
-    print('You\'re stuck in an infinite maze, you can\'t remember for how long, but you can feel that you\'ve been here before...\n')
+    os.system('cls')
+    print('''\n███    ██ ██  ██████  ██   ██ ████████ ███    ███  █████  ██████  ███████     ███████ ██    ██ ███████ ██      
+████   ██ ██ ██       ██   ██    ██    ████  ████ ██   ██ ██   ██ ██          ██      ██    ██ ██      ██      
+██ ██  ██ ██ ██   ███ ███████    ██    ██ ████ ██ ███████ ██████  █████       █████   ██    ██ █████   ██      
+██  ██ ██ ██ ██    ██ ██   ██    ██    ██  ██  ██ ██   ██ ██   ██ ██          ██      ██    ██ ██      ██      
+██   ████ ██  ██████  ██   ██    ██    ██      ██ ██   ██ ██   ██ ███████     ██       ██████  ███████ ███████ ''')   
+    print('\nYou\'re stuck in an infinite maze, you can\'t remember for how long, but you can feel that you\'ve been here before...\n')
     input('\nPress any button to continue')
 
 #Character Creator + Intro -
@@ -285,6 +301,8 @@ def fight():
             print('\nA curius Eye, it delights in seeing your suffering.\nChance to heal itself.')
         elif player.current_enemy[0] == malformed_despair:
             print('\nTheir face is contorted in a perpetual expression of pain\nChance to power up')
+        elif player.current_enemy[0] == rift_walker:
+            print('\nThis creature is barely visible, who knows for how long they\'ve been here\nChance to evade')
         input('...')
         fight()
     if player.is_dead == True:
@@ -337,7 +355,7 @@ def loot_pickup():
     if int(selection) <= len(possible_items) > 0:
         if possible_items[int(selection) - 1] in player.weapon_list:
             print('\nYour {name} grew stronger.'.format(name = possible_items[int(selection) - 1].name))
-            os.sys('cls')
+            os.system('cls')
             if possible_items[int(selection) -1] == c:
                 possible_items[int(selection) - 1].power += 3
                 possible_items[int(selection) - 1].speed += 3
