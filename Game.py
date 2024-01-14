@@ -57,7 +57,6 @@ class Player:
         old_hp = self.health
         heal = math.ceil(self.max_health / 3)
         self.health += heal
-        player.current_enemy.pop()
         if self.health == self.max_health:
             return
         elif self.health > self.max_health:
@@ -74,13 +73,13 @@ class Player:
     def encounter(self):
         self.encounter_scaling += 1
         self.current_enemy_list.append(enemy_list[random.randint(0, (len(enemy_list) - 1))])
-        self.current_enemy_list[0].is_dead = False
-        self.current_enemy_list[0].health = self.current_enemy_list[0].max_health
-        self.current_enemy_list[0].is_poisoned = False
-        self.current_enemy_list[0].health += 1
-        self.current_enemy_list[0].max_health += 1
-        self.current_enemy_list[0].strength += 1
-        print('\nA {name} has appeared.'.format(name = self.current_enemy_list[0].name))
+        self.current_enemy_list[-1].is_dead = False
+        self.current_enemy_list[-1].health = self.current_enemy_list[-1].max_health
+        self.current_enemy_list[-1].is_poisoned = False
+        self.current_enemy_list[-1].health += self.encounter_scaling
+        self.current_enemy_list[-1].max_health += self.encounter_scaling
+        self.current_enemy_list[-1].strength += self.encounter_scaling
+        print('\nA {name} has appeared.'.format(name = self.current_enemy_list[-1].name))
         print('What do you choose to do?')
         input('...')
         fight()
@@ -104,18 +103,18 @@ class Enemy:
         player.lose_health(self.strength)
     
     def enemy_special(self):
-        if player.current_enemy[0] == enemy_list[1]:
+        if player.current_enemy_list[-1] == enemy_list[1]:
             self.strength_buff_counter += 1
             self.strength += 1
             print('\n{name} wails.'.format(name = self.name))
-        elif player.current_enemy[0] == enemy_list[0]:
+        elif player.current_enemy_list[-1] == enemy_list[0]:
             self.health += 2
             if self.health > self.max_health:
                 self.health = self.max_health
                 self.enemy_attack()
             else:
                 print('\n{name} stared into your soul and felt satiated,\n+{hp}HP'.format(name = self.name, hp = 2))
-        elif player.current_enemy[0] == enemy_list[2]:
+        elif player.current_enemy_list[-1] == enemy_list[2]:
             if self.speed >= 9:
                 print('{name} tries to gain more speed but can\'t'.format(name = self.name))
             else:
@@ -280,13 +279,13 @@ def encounter():
 
 def fight():
     os.system('cls')
-    if player.current_enemy[0].is_dead == False:
+    if player.current_enemy_list[-1].is_dead == False:
         print('                          | {score} fiends slain | '.format(score = player.score))
-        print('\n       | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[0].name, enemy_hp = player.current_enemy_list[0].health, enemy_max_hp = player.current_enemy_list[0].max_health))
+        print('\n       | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[-1].name, enemy_hp = player.current_enemy_list[-1].health, enemy_max_hp = player.current_enemy_list[-1].max_health))
         print('\n| a:attack | s:swap weapon | e:check equipped weapon | i:enemy info | ')
     action = input('-->')
     if action == 'attack' or action == 'a':
-        player.attack(player.current_enemy[0])
+        player.attack(player.current_enemy_list[-1])
         input('...')
     elif action == 'swap' or action == 's':
         while len(player.weapon_list) == 1:
@@ -320,12 +319,12 @@ def fight():
         input('...')
         fight()
     elif action == 'info' or action == 'i':
-        print('\n{name} | {strength} Strength |'.format(name = player.current_enemy[0].name, strength = player.current_enemy[0].strength))
-        if player.current_enemy[0] == wretched_eye:
+        print('\n{name} | {strength} Strength |'.format(name = player.current_enemy_list[-1].name, strength = player.current_enemy_list[-1].strength))
+        if player.current_enemy_list[-1] == wretched_eye:
             print('\nA curius Eye, it delights in seeing your suffering.\nChance to heal itself.')
-        elif player.current_enemy[0] == malformed_despair:
+        elif player.current_enemy_list[-1] == malformed_despair:
             print('\nTheir face is contorted in a perpetual expression of pain\nChance to power up')
-        elif player.current_enemy[0] == rift_walker:
+        elif player.current_enemy_list[-1] == rift_walker:
             print('\nThis creature is barely visible, who knows for how long they\'ve been here\nChance to evade')
         input('...')
         fight()
@@ -335,26 +334,26 @@ def fight():
             gameover()
     
     else:
-        if player.current_enemy[0].is_dead == False:
-            if player.current_enemy[0].is_poisoned == True:
-                player.current_enemy[0].poison_lose_health(int(e.power))
-            if player.current_enemy[0].is_dead == False:
+        if player.current_enemy_list[-1].is_dead == False:
+            if player.current_enemy_list[-1].is_poisoned == True:
+                player.current_enemy_list[-1].poison_lose_health(int(e.power))
+            if player.current_enemy_list[-1].is_dead == False:
                 enemy_action = random.randint(0,5)
                 if enemy_action <= 2:
-                    player.current_enemy[0].enemy_attack()
+                    player.current_enemy_list[-1].enemy_attack()
                 elif enemy_action == 2 or enemy_action <= 4:
-                    player.current_enemy[0].enemy_special()
+                    player.current_enemy_list[-1].enemy_special()
                 elif enemy_action == 5:
-                    print('\nThe {name} is staring at you.'.format(name = player.current_enemy[0].name))
+                    print('\nThe {name} is staring at you.'.format(name = player.current_enemy_list[-1].name))
                     input('...')
                 fight()
             else:
-                player.current_enemy[0].is_poisoned = False
+                player.current_enemy_list[-1].is_poisoned = False
                 player.victory()
                 loot_drop()
                 encounter() 
         else:
-            player.current_enemy[0].is_poisoned = False
+            player.current_enemy_list[-1].is_poisoned = False
             player.victory()
             loot_drop()
             encounter()
@@ -423,10 +422,10 @@ def gameover():
         option = input('\n-->')
     if int(option) == 1:
         player.score = 0
-        player.current_enemy_list[0].health -= player.encounter_scaling
-        player.current_enemy_list[0].max_health -= player.encounter_scaling
-        player.current_enemy_list[0].strength -= player.encounter_scaling
-        player.current_enemy_list[0].is_poisoned = False
+        player.current_enemy_list[-1].health -= player.encounter_scaling
+        player.current_enemy_list[-1].max_health -= player.encounter_scaling
+        player.current_enemy_list[-1].strength -= player.encounter_scaling
+        player.current_enemy_list[-1].is_poisoned = False
         player.current_enemy_list = []
         player.weapon_list.clear()
         player.is_dead = False
