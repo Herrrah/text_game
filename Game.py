@@ -34,13 +34,20 @@ class Player:
             gameover()
     
     def lose_health(self, amount):
-        self.health -= amount
+        damage_amount = amount - self.current_weapon.defense
+        if damage_amount < 0:
+            damage_amount = 0
+        self.health -= damage_amount
         if self.health <= 0:
             print('\nYou were fatally struck for {amount}dmg.'.format(amount = amount))
             input('...')
             self.death()
         else:
-            print('\nYou were hit for {amount}dmg.'.format(amount = amount))
+            if self.current_weapon.defense > 0:
+                print(('\nYou were hit for {amount}dmg, but blocked {block}.'.format(amount = amount, block = self.current_weapon.defense)))
+            else:
+                print('\nYou were hit for {amount}dmg.'.format(amount = amount))
+            
             input('...')
 
     
@@ -72,13 +79,11 @@ class Player:
 
     def encounter(self):
         self.encounter_scaling += 1
-        self.current_enemy_list.append(enemy_list[random.randint(0, (len(enemy_list) - 1))])
-        self.current_enemy_list[-1].is_dead = False
+        new_enemy = enemy_list[random.randint(0, len(enemy_list) - 1)]
+        new_enemy_instance = Enemy(new_enemy.name, new_enemy.health + player.encounter_scaling, new_enemy.max_health + player.encounter_scaling, new_enemy.strength + player.encounter_scaling, new_enemy.speed + player.encounter_scaling)
+
+        self.current_enemy_list.append(new_enemy_instance)
         self.current_enemy_list[-1].health = self.current_enemy_list[-1].max_health
-        self.current_enemy_list[-1].is_poisoned = False
-        self.current_enemy_list[-1].health += self.encounter_scaling
-        self.current_enemy_list[-1].max_health += self.encounter_scaling
-        self.current_enemy_list[-1].strength += self.encounter_scaling
         print('\nA {name} has appeared.'.format(name = self.current_enemy_list[-1].name))
         print('What do you choose to do?')
         input('...')
@@ -103,18 +108,25 @@ class Enemy:
         player.lose_health(self.strength)
     
     def enemy_special(self):
-        if player.current_enemy_list[-1] == enemy_list[1]:
+        if self.name == malformed_despair.name:
             self.strength_buff_counter += 1
             self.strength += 1
             print('\n{name} wails.'.format(name = self.name))
-        elif player.current_enemy_list[-1] == enemy_list[0]:
-            self.health += 2
-            if self.health > self.max_health:
-                self.health = self.max_health
+        elif self.name == wretched_eye.name:
+            heal_amount = 2
+            if self.health == self.max_health:
                 self.enemy_attack()
             else:
-                print('\n{name} stared into your soul and felt satiated,\n+{hp}HP'.format(name = self.name, hp = 2))
-        elif player.current_enemy_list[-1] == enemy_list[2]:
+                if self.health < 10:
+                    self.health += heal_amount
+                    if self.health > self.max_health:
+                        self.health = self.max_health       
+                else:
+                    heal_amount = self.health / 2
+                    self.health +=  heal_amount
+
+                print('\n{name} stared into your soul and felt satiated,\n+{hp}HP'.format(name = self.name, hp = heal_amount))
+        elif self.name == rift_walker.name:
             if self.speed >= 9:
                 print('{name} tries to gain more speed but can\'t'.format(name = self.name))
             else:
@@ -161,12 +173,14 @@ class Enemy:
 ################################################################### WEAPONS
 
 class Weapon:
-    def __init__(self, name, power, speed, crit, poison = False):
+    def __init__(self, name, power, speed, crit, defense, scaling = 0, poison = False):
         self.name = name
         self.power = power
         self.speed = speed
         self.crit = crit
+        self.defense = defense
         self.poison = poison
+        self.scaling = scaling
 
     def __repr__(self):
         description = '{name}'.format(name = self.name)
@@ -204,10 +218,10 @@ class Weapon:
             if enemy.is_dead == False:
                 if self.name == b.name:
                     print('EXTRA Critical!')
-                    enemy.enemy_lose_health(self.power * 2 + player.strength + 2)
+                    enemy.enemy_lose_health((self.power + player.strength) * 2 + 2)
                 else:
                     print('Critial!')
-                    enemy.enemy_lose_health(self.power * 2 + player.strength)
+                    enemy.enemy_lose_health((self.power + player.strength) * 2)
         elif self.crit <= random_number_crit:
             if enemy.is_dead == False:
                 enemy.enemy_lose_health(self.power + player.strength) 
@@ -227,14 +241,15 @@ enemy_list = [wretched_eye, malformed_despair, rift_walker]
 
 ####################################################################### Weapon Objects
 
-a = Weapon('Rusty Knife', 2, 2, 1)
-b = Weapon('Shard of Glass', 2, 1, 8)
-c = Weapon('Iron Maiden', 10, 1, 1)
-d = Weapon('Flaming Sword', 3, 1, 2)
-e = Weapon('Putrid Crowbar', 2, 1, 0, True)
+a = Weapon('Rusty Knife', 2, 2, 1, 0)
+b = Weapon('Shard of Glass', 2, 1, 9, 0)
+c = Weapon('Iron Maiden', 20, 1, 1, 0)
+d = Weapon('Sword of the fallen', 4, 1, 3, 3)
+e = Weapon('Putrid Crowbar', 3, 1, 0, 1, True)
+f = Weapon('Onyx Barrier', 4, 1, 0, 7)
 
 
-weapons_list = [a, b, c, d, e]
+weapons_list = [a, b, c, d, e, f]
 ###################################################################### Buff Objects
 
 health = Buff('Frigid Hearth')
@@ -278,85 +293,96 @@ def encounter():
     player.encounter()
 
 def fight():
-    os.system('cls')
-    if player.current_enemy_list[-1].is_dead == False:
-        print('                          | {score} fiends slain | '.format(score = player.score))
-        print('\n       | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[-1].name, enemy_hp = player.current_enemy_list[-1].health, enemy_max_hp = player.current_enemy_list[-1].max_health))
-        print('\n| a:attack | s:swap weapon | e:check equipped weapon | i:enemy info | ')
-    action = input('-->')
-    if action == 'attack' or action == 'a':
-        player.attack(player.current_enemy_list[-1])
-        input('...')
-    elif action == 'swap' or action == 's':
-        while len(player.weapon_list) == 1:
-            print('\nYou only have one weapon.')
-            input('...')
-            fight()
-        else:
-            print('\n | Press a number | ')
-            weapon_swap = input('\nwhich weapon would you like to swap to?\n{weapons}\n-->'.format(weapons = player.weapon_list))
-            while weapon_swap == '' or weapon_swap.isdigit() == False or int(weapon_swap) > len(player.weapon_list) or int(weapon_swap) < 1:
-                weapon_swap = input('\nYou can\'t trick the Dream\n-->')
-            if player.weapon_list[int(weapon_swap) - 1] == player.current_weapon:
-                print('\nYou\'re already holding that weapon.')
-            elif int(weapon_swap) <= len(player.weapon_list) or int(weapon_swap) > 0:
-                player.switch_weapon(int(weapon_swap) - 1)
-                print('\nYou swapped to {name}'.format(name = player.current_weapon))
-            input('...')
-            fight()
-    elif action == 'equip' or action == 'e':
-        print('\nYou\'re holding | {name} | {power} Power | {speed} Speed | {crit} Crit'.format(name = player.current_weapon.name, power = player.current_weapon.power + player.strength, speed = player.current_weapon.speed, crit = player.current_weapon.crit))
-        if player.current_weapon == a:
-            print('\nA rusty knife you picked up, it feels light')
-        if player.current_weapon == b:
-            print('\nHigh chance of critical but injures self')
-        if player.current_weapon.name == c.name:
-            print('\nExtremely powerful but single use')
-        if player.current_weapon == d:
-            print('\nA beautiful sword, somehow it\'s lit on fire')
-        if player.current_weapon == e:
-            print('\nIt reeks of dung. Poisons the Enemy')
-        input('...')
-        fight()
-    elif action == 'info' or action == 'i':
-        print('\n{name} | {strength} Strength |'.format(name = player.current_enemy_list[-1].name, strength = player.current_enemy_list[-1].strength))
-        if player.current_enemy_list[-1] == wretched_eye:
-            print('\nA curius Eye, it delights in seeing your suffering.\nChance to heal itself.')
-        elif player.current_enemy_list[-1] == malformed_despair:
-            print('\nTheir face is contorted in a perpetual expression of pain\nChance to power up')
-        elif player.current_enemy_list[-1] == rift_walker:
-            print('\nThis creature is barely visible, who knows for how long they\'ve been here\nChance to evade')
-        input('...')
-        fight()
-    else:
-        fight()
-    if player.is_dead == True:
-            gameover()
-    
-    else:
-        if player.current_enemy_list[-1].is_dead == False:
-            if player.current_enemy_list[-1].is_poisoned == True:
-                player.current_enemy_list[-1].poison_lose_health(int(e.power))
-            if player.current_enemy_list[-1].is_dead == False:
-                enemy_action = random.randint(0,5)
-                if enemy_action <= 2:
-                    player.current_enemy_list[-1].enemy_attack()
-                elif enemy_action == 2 or enemy_action <= 4:
-                    player.current_enemy_list[-1].enemy_special()
-                elif enemy_action == 5:
-                    print('\nThe {name} is staring at you.'.format(name = player.current_enemy_list[-1].name))
-                    input('...')
-                fight()
-            else:
-                player.current_enemy_list[-1].is_poisoned = False
-                player.victory()
-                loot_drop()
-                encounter() 
-        else:
+    while not player.is_dead:
+        os.system('cls')
+        if player.current_enemy_list[-1].is_dead:
             player.current_enemy_list[-1].is_poisoned = False
             player.victory()
             loot_drop()
             encounter()
+            break
+        print('                          | {score} fiends slain | '.format(score = player.score))
+        print('\n       | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[-1].name, enemy_hp = player.current_enemy_list[-1].health, enemy_max_hp = player.current_enemy_list[-1].max_health))
+        print('\n| a:attack | s:swap weapon | e:check equipped weapon | i:enemy info | ')
+        action = input('-->')
+        if action == 'attack' or action == 'a':
+            player.attack(player.current_enemy_list[-1])
+            input('...')
+        elif action == 'swap' or action == 's':
+            while len(player.weapon_list) == 1:
+                print('\nYou only have one weapon.')
+                input('...')
+                fight()
+            else:
+                print('\n | Press a number | ')
+                weapon_swap = input('\nwhich weapon would you like to swap to?\n{weapons}\n-->'.format(weapons = player.weapon_list))
+                while weapon_swap == '' or weapon_swap.isdigit() == False or int(weapon_swap) > len(player.weapon_list) or int(weapon_swap) < 1:
+                    weapon_swap = input('\nYou can\'t trick the Dream\n-->')
+                if player.weapon_list[int(weapon_swap) - 1] == player.current_weapon:
+                    print('\nYou\'re already holding that weapon.')
+                elif int(weapon_swap) <= len(player.weapon_list) or int(weapon_swap) > 0:
+                    player.switch_weapon(int(weapon_swap) - 1)
+                    print('\nYou swapped to {name}'.format(name = player.current_weapon))
+                input('...')
+                fight()
+        elif action == 'equip' or action == 'e':
+            print('\nYou\'re holding | {name} | {power} Power | {speed} Speed | {crit} Crit | {defense} Defense | '.format(name = player.current_weapon.name, power = player.current_weapon.power + player.strength, speed = player.current_weapon.speed, crit = player.current_weapon.crit, defense = player.current_weapon.defense))
+            if player.current_weapon == a:
+                print('\nA rusty knife you picked up, it feels light')
+            if player.current_weapon == b:
+                print('\nHigh chance of critical but injures self')
+            if player.current_weapon.name == c.name:
+                print('\nExtremely powerful but single use')
+            if player.current_weapon == d:
+                print('\nA beautiful sword, it was made for vanquishing evil.')
+            if player.current_weapon == e:
+                print('\nIt reeks of dung. Afflicts enemies with poison.')
+            if player.current_weapon == f:
+                print('\nIt\'s shining, you feel protected.')
+            input('...')
+            fight()
+        elif action == 'info' or action == 'i':
+            print('\n{name} | {strength} Strength |'.format(name = player.current_enemy_list[-1].name, strength = player.current_enemy_list[-1].strength))
+            if player.current_enemy_list[-1] == wretched_eye:
+                print('\nA curius Eye, it delights in seeing your suffering.\nChance to heal itself.')
+            elif player.current_enemy_list[-1] == malformed_despair:
+                print('\nTheir face is contorted in a perpetual expression of pain\nChance to power up')
+            elif player.current_enemy_list[-1] == rift_walker:
+                print('\nThis creature is barely visible, who knows for how long they\'ve been here\nChance to evade')
+            input('...')
+            fight()
+        else:
+            fight()
+        if player.is_dead:
+            gameover()
+        else:
+            if not player.current_enemy_list[-1].is_dead:
+                if player.current_enemy_list[-1].is_poisoned:
+                    player.current_enemy_list[-1].poison_lose_health(int(e.power))
+                if not player.current_enemy_list[-1].is_dead:
+                    enemy_action = random.randint(0, 5)
+                    if enemy_action <= 2:
+                        player.current_enemy_list[-1].enemy_attack()
+                    else:
+                        player.current_enemy_list[-1].enemy_special()
+#                    elif enemy_action == 5:
+#                        print('\nThe {name} is staring at you.'.format(name = player.current_enemy_list[-1].name))
+#                        input('...')
+                    fight()
+                else:
+                    player.current_enemy_list[-1].is_poisoned = False
+                    player.victory()
+                    loot_drop()
+                    encounter() 
+            else:
+                player.current_enemy_list[-1].is_poisoned = False
+                player.victory()
+                loot_drop()
+                encounter()
+    if player.is_dead:
+        gameover()
+        
+
 
 def loot_drop():
     if player.score % 4 == 0:
@@ -365,14 +391,14 @@ def loot_drop():
         global possible_loot
         possible_loot = []
 
-        random_number1 = random.randint(0, len(weapons_list))
+        random_number1 = random.randint(0, len(weapons_list) - 1)
         while True:
-            random_number2 = random.randint(0, len(weapons_list))
+            random_number2 = random.randint(0, len(weapons_list) - 1)
             if random_number2 != random_number1:
                 break
 
-        possible_loot.append(weapons_list[random_number1 - 1])
-        possible_loot.append(weapons_list[random_number2 - 1])
+        possible_loot.append(weapons_list[random_number1])
+        possible_loot.append(weapons_list[random_number2])
         loot_pickup()
 
 def loot_pickup():
@@ -386,6 +412,7 @@ def loot_pickup():
         if possible_loot[int(selection) - 1] in player.weapon_list:
             print('\nYour {name} grew stronger.'.format(name = possible_loot[int(selection) - 1].name))
             input('...')
+            possible_loot[int(selection) - 1].scaling += 1
             if possible_loot[int(selection) -1] == c:
                 possible_loot[int(selection) - 1].power += 3
 
@@ -422,11 +449,18 @@ def gameover():
         option = input('\n-->')
     if int(option) == 1:
         player.score = 0
-        player.current_enemy_list[-1].health -= player.encounter_scaling
-        player.current_enemy_list[-1].max_health -= player.encounter_scaling
-        player.current_enemy_list[-1].strength -= player.encounter_scaling
-        player.current_enemy_list[-1].is_poisoned = False
+        for enemy in player.current_enemy_list:
+            enemy.health -= player.encounter_scaling
+            enemy.max_health -= player.encounter_scaling
+            enemy.strength -= player.encounter_scaling
+            enemy.is_poisoned = False
+        for weapon in player.weapon_list:
+            if weapon == c:
+                weapon.power -= weapon.scaling * 3
+            else:
+                weapon.power -= weapon.scaling 
         player.current_enemy_list = []
+        player.encounter_scaling = 0
         player.weapon_list.clear()
         player.is_dead = False
         player.current_enemy.pop()
