@@ -88,6 +88,16 @@ class Player:
         print('What do you choose to do?')
         input('...')
         fight()
+
+    def boss_encounter(self):
+        self.encounter_scaling += 1
+        new_boss = boss_list[0]
+        new_boss_instance = Boss(new_boss.name, new_boss.health + player.encounter_scaling, new_boss.max_health + player.encounter_scaling, new_boss.strength + player.encounter_scaling, new_boss.speed + player.encounter_scaling)
+        self.current_enemy_list.append(new_boss_instance)
+        print('\nOut of the void appears a dangerous being')
+        print('You feel frightened')
+        input('...')
+        boss_fight()
     
 
 ################################################################## ENEMIES
@@ -159,8 +169,8 @@ class Enemy:
             
 
     def enemy_lose_health(self, amount):
-        dodge_chance = random.randint(1, 10)
-        if self.speed >= dodge_chance:
+        dodge_chance = random.randint(2, 10)
+        if self.speed > dodge_chance:
             print('{name} evaded your attack.'.format(name = self.name))
         else:
             self.health -= amount
@@ -225,21 +235,80 @@ class Weapon:
         elif self.crit <= random_number_crit:
             if enemy.is_dead == False:
                 enemy.enemy_lose_health(self.power + player.strength) 
+
+###################################################################### BOSS
+class Boss:
+    strength_buff_counter = 0
+    speed_buff_counter = 0
+    def __init__(self, name, health, max_health, strength, speed):
+        self.name = name
+        self.health = health
+        self.max_health = max_health
+        self.strength = strength
+        self.speed = speed
+        self.is_dead = False
+        self.is_poisoned = False
+
+        def poison_lose_health(self, amount):
+            self.health -= amount
+            if self.health <= 0:
+                print('{name} fell ill.'.format(name = self.name, amount = amount))
+                input('...')
+                self.enemy_death()
+            else:
+                print('You poisoned {name} for {amount}dmg.'.format(name = self.name, amount = amount))
+                input('...')
             
+    def enemy_death(self):
+        if self.health <= 0:
+            self.health = 0
+            self.is_dead = True
+            self.strength -= self.strength_buff_counter
+            self.strength_buff_counter = 0
+            self.speed -= self.speed_buff_counter
+            self.speed_buff_counter = 0
+            print('{name} has disappeared into the void'.format(name = self.name))
+            
+
+    def enemy_lose_health(self, amount):
+        dodge_chance = random.randint(1, 10)
+        if self.speed > dodge_chance:
+            print('{name} evaded your attack.'.format(name = self.name))
+        else:
+            self.health -= amount
+            if self.health <= 0:
+                print('You fatally struck {name} for {amount}dmg.'.format(name = self.name, amount = amount))
+                self.enemy_death()
+            else:
+                print('{name} has been injured for {amount}dmg.'.format(name = self.name, amount = amount))
+    
+    def enemy_attack(self):
+        player.lose_health(self.strength)
+
+    def boss_heal(self):
+        self.health = self.max_health
+        print('{name} performs a ritual.\nFully healed.'.format(name = self.name))
+    
+    def boss_buff(self):
+        self.strength_buff_counter += 3
+        self.strength += 3
+        print('{name}\'s blood is pumping\nPower increased.')
+    
 ###################################################################### Buffs
 class Buff:
     def __init__(self, name):
         self.name = name
 ###################################################################### Enemy Objects    
 
-#Enemies -
 
 wretched_eye = Enemy('Wretched Eye', 7, 7, 2, 1)
 malformed_despair = Enemy('Malformed Despair', 5, 5, 4, 0)
 rift_walker = Enemy('Rift Walker', 3, 3, 2, 5)
 enemy_list = [wretched_eye, malformed_despair, rift_walker]
 
-####################################################################### Weapon Objects
+wahke = Boss('Wahke Raiker', 300, 300, 0, 0)
+boss_list = [wahke]
+###################################################################### Weapon Objects
 
 a = Weapon('Rusty Knife', 2, 2, 1, 0)
 b = Weapon('Shard of Glass', 2, 1, 9, 0)
@@ -290,7 +359,10 @@ def main():
     input('...')
     #Game start
 def encounter():
-    player.encounter()
+    if player.score == 10:
+        player.boss_encounter()
+    else:
+        player.encounter()
 
 def fight():
     while not player.is_dead:
@@ -365,9 +437,6 @@ def fight():
                         player.current_enemy_list[-1].enemy_attack()
                     else:
                         player.current_enemy_list[-1].enemy_special()
-#                    elif enemy_action == 5:
-#                        print('\nThe {name} is staring at you.'.format(name = player.current_enemy_list[-1].name))
-#                        input('...')
                     fight()
                 else:
                     player.current_enemy_list[-1].is_poisoned = False
@@ -385,28 +454,25 @@ def fight():
 
 
 def loot_drop():
-    if player.score % 4 == 0:
+    if player.score % 2 == 0:
         buff_pickup()
     else:
         global possible_loot
         possible_loot = []
 
-        random_number1 = random.randint(0, len(weapons_list) - 1)
-        while True:
-            random_number2 = random.randint(0, len(weapons_list) - 1)
-            if random_number2 != random_number1:
-                break
-
-        possible_loot.append(weapons_list[random_number1])
-        possible_loot.append(weapons_list[random_number2])
+        numbers = list(range(0, len(weapons_list)))
+        random.shuffle(numbers)
+        possible_loot.append(weapons_list[numbers[0]])
+        possible_loot.append(weapons_list[numbers[1]])
+        possible_loot.append(weapons_list[numbers[2]])
         loot_pickup()
 
 def loot_pickup():
-    if player.score % 4 == 0:
+    if player.score % 2 == 0:
         loot_drop()
     else:
         os.system('cls')
-        selection = input('Out of the void appears a Glimmer\n\n | {loot1} | {loot2} | \n\nChoose wisely...\n-->'.format(loot1 = possible_loot[0], loot2 = possible_loot[1]))
+        selection = input('Out of the void appears a Glimmer\n\n | {loot1} | {loot2} | {loot3} | \n\nChoose wisely...\n-->'.format(loot1 = possible_loot[0], loot2 = possible_loot[1], loot3 = possible_loot[2]))
         while selection.isdigit() == False or int(selection) <= 0 or int(selection) > len(possible_loot):
             selection = input('\nChoose one.\n-->')
         if possible_loot[int(selection) - 1] in player.weapon_list:
@@ -414,10 +480,11 @@ def loot_pickup():
             input('...')
             possible_loot[int(selection) - 1].scaling += 1
             if possible_loot[int(selection) -1] == c:
-                possible_loot[int(selection) - 1].power += 3
+                possible_loot[int(selection) - 1].power += 2
+            if possible_loot[int(selection) -1] == f:
+                possible_loot[int(selection) -1].defense += 1
 
-            else: 
-                possible_loot[int(selection) - 1].power += 1
+            possible_loot[int(selection) - 1].power += 1
 
         else:
             player.weapon_list.append(possible_loot[int(selection) - 1])
@@ -431,15 +498,107 @@ def buff_pickup():
         selection = input('\nChoose one.\n-->')
     if selection == '1':
         player.buff_list.append(buffs_list[0])
-        print('A wash of tranquility washes over you\n+8 Max HP\nFully healed')
-        player.max_health += 8
+        print('A wash of tranquility washes over you\n+10 Max HP\nFully healed')
+        player.max_health += 10
         player.health = player.max_health
     elif selection == '2':
         player.buff_list.append(buffs_list[1])
-        print('Your heart drums with intensity.\n+2 Strength to all weapons\nFully healed')
-        player.strength += 2
+        print('Your heart drums with intensity.\n+1 Strength to all weapons\nFully healed')
+        player.strength += 1
         player.health = player.max_health
     input('...')
+
+def boss_fight():
+
+    while not player.is_dead:
+            os.system('cls')
+            if player.current_enemy_list[-1].is_dead:
+                player.current_enemy_list[-1].is_poisoned = False
+                player.victory()
+                loot_drop()
+                encounter()
+                break
+            print('                          | {score} fiends slain | '.format(score = player.score))
+            print('\n       | {name} ({hp}/{max_hp}hp) is fighting {enemy_name} ({enemy_hp}/{enemy_max_hp}hp) | '.format(name = player.name, hp = player.health, max_hp = player.max_health, enemy_name = player.current_enemy_list[-1].name, enemy_hp = player.current_enemy_list[-1].health, enemy_max_hp = player.current_enemy_list[-1].max_health))
+            print('\n| a:attack | s:swap weapon | e:check equipped weapon | i:enemy info | ')
+            action = input('-->')
+            if action == 'attack' or action == 'a':
+                player.attack(player.current_enemy_list[-1])
+                input('...')
+            elif action == 'swap' or action == 's':
+                while len(player.weapon_list) == 1:
+                    print('\nYou only have one weapon.')
+                    input('...')
+                    boss_fight()
+                else:
+                    print('\n | Press a number | ')
+                    weapon_swap = input('\nwhich weapon would you like to swap to?\n{weapons}\n-->'.format(weapons = player.weapon_list))
+                    while weapon_swap == '' or weapon_swap.isdigit() == False or int(weapon_swap) > len(player.weapon_list) or int(weapon_swap) < 1:
+                        weapon_swap = input('\nYou can\'t trick the Dream\n-->')
+                    if player.weapon_list[int(weapon_swap) - 1] == player.current_weapon:
+                        print('\nYou\'re already holding that weapon.')
+                    elif int(weapon_swap) <= len(player.weapon_list) or int(weapon_swap) > 0:
+                        player.switch_weapon(int(weapon_swap) - 1)
+                        print('\nYou swapped to {name}'.format(name = player.current_weapon))
+                    input('...')
+                    boss_fight()
+            elif action == 'equip' or action == 'e':
+                print('\nYou\'re holding | {name} | {power} Power | {speed} Speed | {crit} Crit | {defense} Defense | '.format(name = player.current_weapon.name, power = player.current_weapon.power + player.strength, speed = player.current_weapon.speed, crit = player.current_weapon.crit, defense = player.current_weapon.defense))
+                if player.current_weapon == a:
+                    print('\nA rusty knife you picked up, it feels light')
+                if player.current_weapon == b:
+                    print('\nHigh chance of critical but injures self')
+                if player.current_weapon.name == c.name:
+                    print('\nExtremely powerful but single use')
+                if player.current_weapon == d:
+                    print('\nA beautiful sword, it was made for vanquishing evil.')
+                if player.current_weapon == e:
+                    print('\nIt reeks of dung. Afflicts enemies with poison.')
+                if player.current_weapon == f:
+                    print('\nIt\'s shining, you feel protected.')
+                input('...')
+                boss_fight()
+            elif action == 'info' or action == 'i':
+                print('\n{name} | {strength} Strength |'.format(name = player.current_enemy_list[-1].name, strength = player.current_enemy_list[-1].strength))
+                if player.current_enemy_list[-1] == wahke:
+                    print('An enigma, said to only exist within the psyche of souls.\nUnpredictable, fearsome\n\nYou best be careful.')   
+                input('...')
+                boss_fight()
+            else:
+                boss_fight()
+            if player.is_dead:
+                gameover()
+            else:
+                if not player.current_enemy_list[-1].is_dead:
+                    if player.current_enemy_list[-1].is_poisoned:
+                        player.current_enemy_list[-1].poison_lose_health(int(e.power))
+                    if not player.current_enemy_list[-1].is_dead:
+                        enemy_action = random.randint(0, 20)
+                        if enemy_action <= 5:
+                            player.current_enemy_list[-1].enemy_attack()
+                        elif enemy_action > 5 and enemy_action < 10:
+                            player.current_enemy_list[-1].boss_heal()
+                        elif enemy_action >= 10 and enemy_action <= 12:
+                            player.current_enemy_list[-1].boss_buff()
+                        elif enemy_action > 12 and enemy_action <= 20:
+                            print('The enemy laughs at your pitiful state')
+                        input('...')
+                        boss_fight()
+                    else:
+                        player.current_enemy_list[-1].is_poisoned = False
+                        player.victory()
+                        loot_drop()
+                        encounter() 
+                else:
+                    player.current_enemy_list[-1].is_poisoned = False
+                    player.victory()
+                    loot_drop()
+                    encounter()
+    if player.is_dead:
+        gameover()
+
+
+
 
 
 def gameover():
