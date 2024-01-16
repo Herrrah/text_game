@@ -35,8 +35,8 @@ class Player:
     
     def lose_health(self, amount):
         damage_amount = amount - self.current_weapon.defense
+        inverse_block = self.current_weapon.defense - amount
         if damage_amount < 0:
-            inverse_block = self.current_weapon.defense - amount
             damage_amount = 1
         self.health -= damage_amount
         if self.health <= 0:
@@ -45,7 +45,7 @@ class Player:
             self.death()
         else:
             if self.current_weapon.defense > 0:
-                if damage_amount == 1:
+                if damage_amount == 1 and inverse_block > 0:
                     print(('\nYou were hit for {amount}dmg, but blocked {block}.'.format(amount = amount, block = inverse_block)))
                 else:
                     print(('\nYou were hit for {amount}dmg, but blocked {block}.'.format(amount = amount, block = self.current_weapon.defense)))
