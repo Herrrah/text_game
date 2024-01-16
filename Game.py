@@ -204,10 +204,9 @@ class Weapon:
         random_number_crit = random.randint(1, 10)
         random_number_crit2 = random.randint(1, 10)
         double_hit_chance = random.randint(0, 4)
-        random_bleed_amount = random.randint(1, 2)
         if self.name == b.name:
-            player.health -= random_bleed_amount + (self.power + player.strength- 2)
-            print('You cut yourself on the sharp edge for {amount}dmg.'.format(amount = random_bleed_amount + (self.power + player.strength- 2)))
+            player.health -= 1 + (self.power + player.strength - 2)
+            print('You cut yourself on the sharp edge for {amount}dmg.'.format(amount = 1 + (self.power + player.strength- 2)))
             if player.health <= 0:
                 player.death()
                 gameover()
@@ -232,7 +231,7 @@ class Weapon:
             if enemy.is_dead == False:
                 if self.name == b.name:
                     print('EXTRA Critical!')
-                    enemy.enemy_lose_health((self.power + player.strength) * 2 + 2)
+                    enemy.enemy_lose_health((self.power + player.strength) * 3)
                 else:
                     print('Critial!')
                     enemy.enemy_lose_health((self.power + player.strength) * 2)
